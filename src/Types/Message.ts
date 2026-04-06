@@ -267,6 +267,26 @@ export type AnyRegularMessageContent = (
 	  }
 	| SharePhoneNumber
 	| RequestPhoneNumber
+	| {
+			/** Send interactive buttons via nativeFlowMessage */
+			interactiveButtons: {
+				body: string
+				footer?: string
+				buttons: { id: string; text: string }[]
+			}
+	  }
+	| {
+			/** Send interactive list via nativeFlowMessage */
+			interactiveList: {
+				body: string
+				footer?: string
+				buttonText: string
+				sections: {
+					title: string
+					rows: { id: string; title: string; description?: string }[]
+				}[]
+			}
+	  }
 ) &
 	ViewOnce
 

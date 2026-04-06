@@ -496,6 +496,46 @@ export const generateWAMessageContent = async (
 		m.pinInChatMessage.senderTimestampMs = Date.now()
 
 		m.messageContextInfo.messageAddOnDurationInSecs = message.type === 1 ? message.time || 86400 : 0
+	} else if (hasNonNullishProperty(message, 'interactiveButtons')) {
+		const { body, footer, buttons } = message.interactiveButtons
+		m.interactiveMessage = proto.Message.InteractiveMessage.create({
+			body: proto.Message.InteractiveMessage.Body.create({ text: body }),
+			...(footer ? { footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }) } : {}),
+			nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+				buttons: buttons.map(b => (
+					proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
+						name: 'quick_reply',
+						buttonParamsJson: JSON.stringify({ display_text: b.text, id: b.id })
+					})
+				)),
+				messageVersion: 1,
+			}),
+		})
+	} else if (hasNonNullishProperty(message, 'interactiveList')) {
+		const { body, footer, buttonText, sections } = message.interactiveList
+		m.interactiveMessage = proto.Message.InteractiveMessage.create({
+			body: proto.Message.InteractiveMessage.Body.create({ text: body }),
+			...(footer ? { footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }) } : {}),
+			nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+				buttons: [
+					proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
+						name: 'single_select',
+						buttonParamsJson: JSON.stringify({
+							title: buttonText,
+							sections: sections.map(s => ({
+								title: s.title,
+								rows: s.rows.map(r => ({
+									id: r.id,
+									title: r.title,
+									...(r.description ? { description: r.description } : {})
+								}))
+							}))
+						})
+					})
+				],
+				messageVersion: 1,
+			}),
+		})
 	} else if (hasNonNullishProperty(message, 'buttonReply')) {
 		switch (message.type) {
 			case 'template':
