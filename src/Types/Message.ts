@@ -272,7 +272,10 @@ export type AnyRegularMessageContent = (
 			interactiveButtons: {
 				body: string
 				footer?: string
-				buttons: { id: string; text: string }[]
+				buttons: (
+					| { id: string; text: string }
+					| { id: string; text: string; copy: string }
+				)[]
 			}
 	  }
 	| {

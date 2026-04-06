@@ -502,12 +502,15 @@ export const generateWAMessageContent = async (
 			body: proto.Message.InteractiveMessage.Body.create({ text: body }),
 			...(footer ? { footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }) } : {}),
 			nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-				buttons: buttons.map(b => (
-					proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
-						name: 'quick_reply',
-						buttonParamsJson: JSON.stringify({ display_text: b.text, id: b.id })
+				buttons: buttons.map(b => {
+					const isCopy = 'copy' in b && !!(b as any).copy
+					return proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
+						name: isCopy ? 'cta_copy' : 'quick_reply',
+						buttonParamsJson: isCopy
+							? JSON.stringify({ display_text: b.text, id: b.id, copy_code: (b as any).copy })
+							: JSON.stringify({ display_text: b.text, id: b.id })
 					})
-				)),
+				}),
 				messageVersion: 1,
 			}),
 		})
