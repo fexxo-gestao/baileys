@@ -503,16 +503,16 @@ export const generateWAMessageContent = async (
 			...(footer ? { footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }) } : {}),
 			nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
 				buttons: buttons.map(b => {
-					const isCopy = 'copy' in b && !!(b as any).copy
+					const isCopy = 'copy' in b && Boolean(b.copy)
 					return proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
 						name: isCopy ? 'cta_copy' : 'quick_reply',
 						buttonParamsJson: isCopy
-							? JSON.stringify({ display_text: b.text, id: b.id, copy_code: (b as any).copy })
+							? JSON.stringify({ display_text: b.text, id: b.id, copy_code: 'copy' in b ? b.copy : '' })
 							: JSON.stringify({ display_text: b.text, id: b.id })
 					})
 				}),
-				messageVersion: 1,
-			}),
+				messageVersion: 1
+			})
 		})
 	} else if (hasNonNullishProperty(message, 'interactiveList')) {
 		const { body, footer, buttonText, sections } = message.interactiveList
@@ -536,8 +536,8 @@ export const generateWAMessageContent = async (
 						})
 					})
 				],
-				messageVersion: 1,
-			}),
+				messageVersion: 1
+			})
 		})
 	} else if (hasNonNullishProperty(message, 'buttonReply')) {
 		switch (message.type) {
@@ -629,6 +629,11 @@ export const generateWAMessageContent = async (
 				m.pollCreationMessage = pollCreationMessage
 			}
 		}
+	} else if (hasNonNullishProperty(message, 'album')) {
+		m.albumMessage = {
+			expectedImageCount: message.album.expectedImageCount,
+			expectedVideoCount: message.album.expectedVideoCount
+		}
 	} else if (hasNonNullishProperty(message, 'sharePhoneNumber')) {
 		m.protocolMessage = {
 			type: proto.Message.ProtocolMessage.Type.SHARE_PHONE_NUMBER
@@ -694,6 +699,16 @@ export const generateWAMessageContent = async (
 			key.contextInfo = { ...key.contextInfo, ...message.contextInfo }
 		} else if (key!) {
 			key.contextInfo = message.contextInfo
+		}
+	}
+
+	if (hasOptionalProperty(message, 'albumParentKey') && !!message.albumParentKey) {
+		m.messageContextInfo = {
+			...m.messageContextInfo,
+			messageAssociation: {
+				associationType: WAProto.MessageAssociation.AssociationType.MEDIA_ALBUM,
+				parentMessageKey: message.albumParentKey
+			}
 		}
 	}
 
