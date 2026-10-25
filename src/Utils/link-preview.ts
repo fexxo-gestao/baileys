@@ -2,6 +2,7 @@ import type { WAMediaUploadFunction, WAUrlInfo } from '../Types'
 import type { ILogger } from './logger'
 import { prepareWAMessageMedia } from './messages'
 import { extractImageThumb, getHttpStream } from './messages-media'
+import { isPublicUrl, PrivateAddressError, resolvePublicHost } from './public-host'
 
 const THUMBNAIL_WIDTH_PX = 192
 
@@ -50,6 +51,7 @@ export const getUrlInfo = async (
 
 		const info = await getLinkPreview(previewLink, {
 			...opts.fetchOpts,
+			resolveDNSHost: (url: string) => resolvePublicHost(url),
 			followRedirects: 'follow',
 			handleRedirects: (baseURL: string, forwardedURL: string) => {
 				const urlObj = new URL(baseURL)
@@ -72,7 +74,8 @@ export const getUrlInfo = async (
 			headers: opts.fetchOpts?.headers as {}
 		})
 		if (info && 'title' in info && info.title) {
-			const [image] = info.images
+			const [candidateImage] = info.images
+			const image = candidateImage && (await isPublicUrl(candidateImage)) ? candidateImage : undefined
 
 			const urlInfo: WAUrlInfo = {
 				'canonical-url': info.url,
@@ -82,7 +85,7 @@ export const getUrlInfo = async (
 				originalThumbnailUrl: image
 			}
 
-			if (opts.uploadImage) {
+			if (opts.uploadImage && image) {
 				const { imageMessage } = await prepareWAMessageMedia(
 					{ image: { url: image! } },
 					{
@@ -104,6 +107,11 @@ export const getUrlInfo = async (
 			return urlInfo
 		}
 	} catch (error: any) {
+		if (error instanceof PrivateAddressError) {
+			opts.logger?.warn({ host: error.hostname }, 'link preview skipped: non-public address')
+			return undefined
+		}
+
 		if (!error.message.includes('receive a valid')) {
 			throw error
 		}
