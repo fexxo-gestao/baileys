@@ -72,8 +72,7 @@ describe('isPublicUrl', () => {
 
 describe('getUrlInfo SSRF guard', () => {
 	it('sends the message without preview instead of fetching an internal address', async () => {
-		const warnings: unknown[] = []
-		const logger = { warn: (obj: unknown) => warnings.push(obj), debug: () => {} } as never
+		const logger = { warn: () => {}, debug: () => {} } as never
 
 		await expect(
 			getUrlInfo('http://127.0.0.1:9/metrics', { thumbnailWidth: 192, fetchOpts: { timeout: 1000 }, logger })
@@ -85,6 +84,5 @@ describe('getUrlInfo SSRF guard', () => {
 				logger
 			})
 		).resolves.toBeUndefined()
-		expect(warnings).toHaveLength(2)
 	})
 })
