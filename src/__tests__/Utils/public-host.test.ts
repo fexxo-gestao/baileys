@@ -35,11 +35,15 @@ describe('isNonPublicAddress', () => {
 
 describe('resolvePublicHost', () => {
 	it('returns the first address of a public host', async () => {
-		await expect(resolvePublicHost('https://example.com/a', resolvingTo('93.184.216.34'))).resolves.toBe('93.184.216.34')
+		await expect(resolvePublicHost('https://example.com/a', resolvingTo('93.184.216.34'))).resolves.toBe(
+			'93.184.216.34'
+		)
 	})
 
 	it('refuses an IP literal that is internal', async () => {
-		await expect(resolvePublicHost('http://169.254.169.254/latest/meta-data')).rejects.toBeInstanceOf(PrivateAddressError)
+		await expect(resolvePublicHost('http://169.254.169.254/latest/meta-data')).rejects.toBeInstanceOf(
+			PrivateAddressError
+		)
 		await expect(resolvePublicHost('http://[::1]:3000/metrics')).rejects.toBeInstanceOf(PrivateAddressError)
 	})
 
@@ -75,7 +79,11 @@ describe('getUrlInfo SSRF guard', () => {
 			getUrlInfo('http://127.0.0.1:9/metrics', { thumbnailWidth: 192, fetchOpts: { timeout: 1000 }, logger })
 		).resolves.toBeUndefined()
 		await expect(
-			getUrlInfo('http://169.254.169.254/latest/meta-data/', { thumbnailWidth: 192, fetchOpts: { timeout: 1000 }, logger })
+			getUrlInfo('http://169.254.169.254/latest/meta-data/', {
+				thumbnailWidth: 192,
+				fetchOpts: { timeout: 1000 },
+				logger
+			})
 		).resolves.toBeUndefined()
 		expect(warnings).toHaveLength(2)
 	})
